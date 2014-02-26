@@ -7,10 +7,14 @@ import java.io.IOException;
 import java.io.*; 
 import java.net.*; 
 
-public class ClientHTTP {	
+public class ClientHTTP {
 	
-	public static boolean isValidCommand(String cmd) {
-		return false;
+	public String[] doGet10(String filePath, String host, int port)
+	{
+		StringBuilder HTTPCommand = new StringBuilder("GET ");
+		HTTPCommand.append(filePath + " HTTP/1.0 \n\n");
+		
+		Socket socket = new Socket(host, port);
 	}
 	
 	public static void main(String[] args) throws Exception {
