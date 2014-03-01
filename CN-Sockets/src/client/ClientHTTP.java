@@ -9,12 +9,14 @@ import java.net.*;
 
 public class ClientHTTP {
 	
-	public String[] doGet10(String filePath, String host, int port)
+	public String doGet(String filePath, String host, int port) throws IOException
 	{
 		StringBuilder HTTPCommand = new StringBuilder("GET ");
 		HTTPCommand.append(filePath + " HTTP/1.0 \n\n");
 		
-		Socket socket = new Socket(host, port);
+		ClientConnection connection = new ClientConnection(host, port);
+		
+		return null;
 	}
 	
 	public static void main(String[] args) throws Exception {
