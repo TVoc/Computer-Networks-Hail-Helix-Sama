@@ -1,4 +1,4 @@
-package client.implementation;
+package support;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
@@ -10,25 +10,30 @@ import java.net.Socket;
 public class ClientConnection {
 	
 	private Socket socket;
-	private BufferedReader inFromServer;
-	private DataOutputStream outToServer;
+	private BufferedReader in;
+	private DataOutputStream out;
 	
-	public ClientConnection(String host, int port) throws IOException
+	public ClientConnection(String host, int port, String charset) throws IOException
 	{
 		socket = new Socket(InetAddress.getByName(host), port);
-		inFromServer = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-		outToServer = new DataOutputStream (socket.getOutputStream());
+		in = new BufferedReader(new InputStreamReader(socket.getInputStream(), charset));
+		out = new DataOutputStream (socket.getOutputStream());
 	}
 	
 	public void write(String message) throws IOException
 	{
-		outToServer.writeBytes(message);
+		out.writeBytes(message);
 	}
 	
-	public String read() throws IOException
+	public String readLine() throws IOException
+	{
+		return in.readLine();
+	}
+	
+	public String readUntilEmpty() throws IOException
 	{
 		StringBuilder response = new StringBuilder();
-		String line = inFromServer.readLine();
+		String line = in.readLine();
 		while (line != null)
 		{
 			if (! (response.toString() == ""))
@@ -36,7 +41,7 @@ public class ClientConnection {
 				response.append("\n");
 			}
 			response.append(line);
-			line = inFromServer.readLine();
+			line = in.readLine();
 		}
 		return response.toString();
 	}
@@ -45,10 +50,10 @@ public class ClientConnection {
 	{
 		if (! socket.isClosed())
 			socket.close();
-		inFromServer.close();
-		outToServer.close();
-		inFromServer = null;
-		outToServer = null;
+		in.close();
+		out.close();
+		in = null;
+		out = null;
 	}
 
 }

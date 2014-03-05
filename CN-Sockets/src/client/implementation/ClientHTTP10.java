@@ -4,9 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.io.*;
 
+import support.ClientConnection;
 import client.interfaces.ClientHTTP;
 
 public class ClientHTTP10 extends ClientHTTP {
+	
+	private static String charset = "UTF-8";
 	
 	@Override
 	public List<String> doGet(String filePath, String host, int port) throws IOException
@@ -28,9 +31,9 @@ public class ClientHTTP10 extends ClientHTTP {
 		StringBuilder HTTPCommand = new StringBuilder("GET ");
 		HTTPCommand.append(filePath + " HTTP/1.0\r\n\r\n");
 
-		ClientConnection connection = new ClientConnection(host, port);
+		ClientConnection connection = new ClientConnection(host, port, charset);
 		connection.write(HTTPCommand.toString());
-		String response = connection.read();
+		String response = connection.readUntilEmpty();
 		return response;
 	}
 
@@ -40,9 +43,9 @@ public class ClientHTTP10 extends ClientHTTP {
 		StringBuilder HTTPCommand = new StringBuilder("HEAD ");
 		HTTPCommand.append(filePath + " HTTP/1.0\r\n\r\n");
 		
-		ClientConnection connection = new ClientConnection(host, port);
+		ClientConnection connection = new ClientConnection(host, port, charset);
 		connection.write(HTTPCommand.toString());
-		String response = connection.read();
+		String response = connection.readUntilEmpty();
 		return response;
 	}
 
@@ -56,9 +59,9 @@ public class ClientHTTP10 extends ClientHTTP {
 		HTTPCommand.append("\r\n\r\n");
 		HTTPCommand.append(body);
 		
-		ClientConnection connection = new ClientConnection(host, port);
+		ClientConnection connection = new ClientConnection(host, port, charset);
 		connection.write(HTTPCommand.toString());
-		String response = connection.read();
+		String response = connection.readUntilEmpty();
 		return response;
 	}
 
@@ -72,9 +75,9 @@ public class ClientHTTP10 extends ClientHTTP {
 		HTTPCommand.append("\r\n\r\n");
 		HTTPCommand.append(body);
 		
-		ClientConnection connection = new ClientConnection(host, port);
+		ClientConnection connection = new ClientConnection(host, port, charset);
 		connection.write(HTTPCommand.toString());
-		String response = connection.read();
+		String response = connection.readUntilEmpty();
 		return response;
 	}
 	
