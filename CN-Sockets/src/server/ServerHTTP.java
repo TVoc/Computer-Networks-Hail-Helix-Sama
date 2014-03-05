@@ -11,6 +11,7 @@ public class ServerHTTP {
 	private Set<String> allowedMethods;
 	private Set<String> allowedProtocols;
 	private String charset;
+	private long timeout_millis = 5000;
 	
 	public static final String ROOT_SERVER_FILES = "/serverfiles";
 	
@@ -44,6 +45,21 @@ public class ServerHTTP {
 	public boolean isAllowedProtocol(String protocol)
 	{
 		return allowedProtocols.contains(protocol);
+	}
+	
+	public boolean isPersistentProtocol(String protocol)
+	{
+		return protocol.equals("1.1");
+	}
+	
+	public long getTimeoutMillis()
+	{
+		return this.timeout_millis;
+	}
+	
+	public String getCharSet()
+	{
+		return this.charset;
 	}
 	
 	private void initialiseAllowedMethods()

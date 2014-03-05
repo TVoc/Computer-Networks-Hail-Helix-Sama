@@ -39,6 +39,10 @@ public class HTTP10ClientTest {
 	{
 		List<String> response = client.doGet("/", host, port);
 		assertEquals(response.size(), 4); // examination of source code reveals three embedded images, so number of strings is initial response + number of images.
+		for (String oneResponse : response)
+		{
+			System.out.println(oneResponse);
+		}
 	}
 	
 	@Test

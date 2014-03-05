@@ -25,6 +25,10 @@ public class FileHandler {
 		{
 			output.append(line);
 			line = reader.readLine();
+			if (line != null)
+			{
+				output.append("\n");
+			}
 		}
 		reader.close();
 		return output.toString();
@@ -45,7 +49,7 @@ public class FileHandler {
 		return nonSyncRead(filePath);
 	}
 	
-	private String nonSyncRead(String filePath) throws IOException
+	private String nonSyncRead(String filePath) throws FileNotFoundException, IOException
 	{
 		BufferedReader reader = new BufferedReader(new FileReader(filePath));
 		StringBuilder output = new StringBuilder();
@@ -54,6 +58,10 @@ public class FileHandler {
 		{
 			output.append(line);
 			line = reader.readLine();
+			if (line != null)
+			{
+				output.append("\n");
+			}
 		}
 		reader.close();
 		return output.toString();
