@@ -4,13 +4,23 @@ import java.util.Scanner;
 
 public class ClientCommandLine {
 
+	/** 
+	 * Start a new HTTPClient with the specified arguments. 
+	 * @param args
+	 */
 	public static void main(String[] args) {
-		ClientHTTP client = new ClientHTTP();
-		Scanner in = new Scanner(System.in);
+		if (args.length != 4)
+			System.out.println("Invalid number of arguments. "
+					+ "Expected syntax: <HTTP command> <URI> <port> "
+					+ "<HTTP version>");
 		
-		System.out.println("Enter command. Expected syntax: <HTTP command> <URI> <port> <HTTP version>");
+		if (!args[2].matches("[123456789]\\d*|0"))
+			System.out.println("Invalid port number. Expected a value in "
+					+ "[0,1..].");
 		
-
+			
+		ClientHTTP client = new ClientHTTP();		
+		
 	}
 
 }
