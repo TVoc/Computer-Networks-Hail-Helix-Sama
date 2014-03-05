@@ -1,6 +1,7 @@
 package client;
 
-import java.util.Scanner;
+import client.implementation.ClientHTTP10;
+import client.interfaces.ClientHTTP;
 
 public class ClientCommandLine {
 
@@ -18,9 +19,7 @@ public class ClientCommandLine {
 			System.out.println("Invalid port number. Expected a value in "
 					+ "[0,1..].");
 		
-			
-		ClientHTTP client = new ClientHTTP();		
-		
+		ClientHTTP client = new ClientHTTP10();		
 	}
 
 }
