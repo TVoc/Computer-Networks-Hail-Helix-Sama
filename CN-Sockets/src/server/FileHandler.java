@@ -2,10 +2,14 @@ package server;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class FileHandler {
 	
@@ -16,55 +20,53 @@ public class FileHandler {
 		
 	}
 	
-	public synchronized String read(String filePath) throws FileNotFoundException, IOException
+	public synchronized FileReadResult read(String filePath) throws FileNotFoundException, IOException
 	{
-		BufferedReader reader = new BufferedReader(new FileReader(ServerHTTP.ROOT_SERVER_FILES + filePath));
-		StringBuilder output = new StringBuilder();
-		String line = reader.readLine();
-		while (line != null)
-		{
-			output.append(line);
-			line = reader.readLine();
-			if (line != null)
-			{
-				output.append("\n");
-			}
-		}
-		reader.close();
-		return output.toString();
+		return readHelper(filePath);
 	}
 	
 	public synchronized void write(String filePath, String input) throws FileNotFoundException, IOException
 	{
-		BufferedWriter writer = new BufferedWriter(new FileWriter(ServerHTTP.ROOT_SERVER_FILES + filePath, true));
+		BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true));
 		writer.write(input);
 		writer.close();
 	}
 	
-	public synchronized String writeAndRead(String filePath, String input) throws FileNotFoundException, IOException
+	public synchronized FileReadResult writeAndRead(String filePath, String input) throws FileNotFoundException, IOException
 	{
-		BufferedWriter writer = new BufferedWriter(new FileWriter(ServerHTTP.ROOT_SERVER_FILES + filePath, true));
+		BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true));
 		writer.write(input);
 		writer.close();
 		return nonSyncRead(filePath);
 	}
 	
-	private String nonSyncRead(String filePath) throws FileNotFoundException, IOException
+	private FileReadResult nonSyncRead(String filePath) throws FileNotFoundException, IOException
 	{
-		BufferedReader reader = new BufferedReader(new FileReader(filePath));
-		StringBuilder output = new StringBuilder();
-		String line = reader.readLine();
-		while (line != null)
+		return readHelper(filePath);
+	}
+	
+	private FileReadResult readHelper(String filePath) throws FileNotFoundException, IOException
+	{
+		FileInputStream input = new FileInputStream(filePath);
+		int numBytes = 0;
+		List<byte[]> bytes = new ArrayList<byte[]>();
+		
+		byte[] buffer = new byte[1024];
+		int read = 0;
+		
+		while (read >= 0)
 		{
-			output.append(line);
-			line = reader.readLine();
-			if (line != null)
+			read = input.read(buffer);
+			if (read < 0)
 			{
-				output.append("\n");
+				continue;
 			}
+			byte[] truncatedToRealLength = Arrays.copyOf(buffer, read);
+			bytes.add(truncatedToRealLength);
+			numBytes += read;
 		}
-		reader.close();
-		return output.toString();
+		input.close();
+		return new FileReadResult(numBytes, bytes);
 	}
 
 }

@@ -1,29 +1,47 @@
 package support;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.util.Arrays;
+import java.util.List;
+
+import server.FileReadResult;
 
 public class ServerConnection {
 	
 	private Socket socket;
 	private BufferedReader in;
 	private DataOutputStream out;
+	private String charset;
+	private StringByteCounter counter;
 	
 	public ServerConnection(Socket socket, String charset) throws IOException
 	{
 		this.socket = socket;
-		in = new BufferedReader(new InputStreamReader(socket.getInputStream(), charset));
-		out = new DataOutputStream (socket.getOutputStream());
+		this.in = new BufferedReader(new InputStreamReader(socket.getInputStream(), charset));
+		this.out = new DataOutputStream (socket.getOutputStream());
+		this.charset = charset;
+		this.counter = new StringByteCounter();
 	}
 	
 	public void write(String message) throws IOException
 	{
 		out.writeBytes(message);
+	}
+	
+	public void write(FileReadResult fileContents) throws IOException
+	{
+		List<byte[]> bytes = fileContents.getBytes();
+		for (byte[] buffer : bytes)
+		{
+			out.write(buffer);
+		}
 	}
 	
 	public String readLine() throws IOException
@@ -35,31 +53,17 @@ public class ServerConnection {
 	{
 		StringBuilder toReturn = new StringBuilder();
 		
-		byte[] byteBuffer = new byte[1024];
-		int read = 0;
-		InputStream input = socket.getInputStream();
-		while (read <= bytes)
+		char[] charBuffer = new char[1024];
+		int totalRead = 0;
+		while (totalRead < bytes)
 		{
-			read += input.read(byteBuffer, 0, byteBuffer.length);
-			toReturn.append(new String(byteBuffer));
+			int singleStepRead = in.read(charBuffer, 0, charBuffer.length);
+			char[] copy = Arrays.copyOf(charBuffer, singleStepRead);
+			String part =  new String(copy);
+			totalRead += counter.countBytes(part, this.charset);
+			toReturn.append(part);
 		}
 		return toReturn.toString();
-	}
-	
-	public String readUntilEmpty() throws IOException
-	{
-		StringBuilder response = new StringBuilder();
-		String line = in.readLine();
-		while (line != null)
-		{
-			if (! (response.toString() == ""))
-			{
-				response.append("\n");
-			}
-			response.append(line);
-			line = in.readLine();
-		}
-		return response.toString();
 	}
 	
 	public boolean readyForRead() throws IOException

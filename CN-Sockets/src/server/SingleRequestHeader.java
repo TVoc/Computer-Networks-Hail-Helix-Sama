@@ -39,7 +39,7 @@ public class SingleRequestHeader {
 	
 	public boolean connectionKeepAlive()
 	{
-		return this.connectionKeepAlive();
+		return this.connectionKeepAlive;
 	}
 	
 	public void setConnectionKeepAlive(boolean connectionKeepAlive)

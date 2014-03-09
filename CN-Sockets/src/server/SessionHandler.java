@@ -14,7 +14,6 @@ public class SessionHandler implements Runnable {
 	private ServerConnection connection;
 	private StringByteCounter counter = new StringByteCounter();
 	private boolean persistentConnection;
-	private String charset;
 	
 	public SessionHandler(Socket socket, ServerHTTP server) throws IllegalArgumentException, IOException
 	{
@@ -22,9 +21,8 @@ public class SessionHandler implements Runnable {
 		{
 			throw new IllegalArgumentException("Cannot initialise a session with non-existent socket");
 		}
-		connection = new ServerConnection(socket, charset);
+		connection = new ServerConnection(socket, server.getCharSet());
 		this.server = server;
-		this.charset = server.getCharSet();
 	}
 
 	@Override
@@ -41,6 +39,7 @@ public class SessionHandler implements Runnable {
 				String requestMethod = connection.readLine();
 				if (!isValidRequestMethod(requestMethod)) {
 					notifyInvalidRequest();
+					connection.close();
 					continue;
 				}
 				String[] requestParts = requestMethod.split(" ");
@@ -51,7 +50,6 @@ public class SessionHandler implements Runnable {
 						|| !server.isAllowedProtocol(protocol)) {
 					notifyInvalidRequest();
 					connection.close();
-					return;
 				}
 				// HTTP 1.1 requires sending back a continue header
 				if (protocol.equals("1.1"))
@@ -116,6 +114,7 @@ public class SessionHandler implements Runnable {
 	private boolean connectionTimeout()
 	{
 		boolean clientReady = false;
+		boolean timeOut = false;
 		long startTime = System.currentTimeMillis();
 		long timeoutTime = startTime + server.getTimeoutMillis();
 		while ((System.currentTimeMillis() < timeoutTime) && ! clientReady)
@@ -130,17 +129,25 @@ public class SessionHandler implements Runnable {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			if (System.currentTimeMillis() >= timeoutTime)
+			{
+				timeOut = true;
+			}
 		}
-		return clientReady;
+		if (timeOut)
+		{
+			return true;
+		}
+		else return ! clientReady;
 	}
 	
 	private SingleRequestHeader readHeader() throws IOException
 	{
 		SingleRequestHeader toReturn = new SingleRequestHeader();
 		String newLine = connection.readLine();
-		while (! newLine.equals(" "))
+		while (! newLine.equals(""))
 		{
-			newLine = newLine.trim();
+			newLine = newLine.replaceAll(" ","");
 			newLine = newLine.toLowerCase();
 			if (newLine.contains("host"))
 			{
@@ -172,6 +179,7 @@ public class SessionHandler implements Runnable {
 				}
 				toReturn.setContentLength(Integer.parseInt(newLine.split(":")[1]));
 			}
+			newLine = connection.readLine();
 		}
 		return toReturn;
 	}
@@ -205,11 +213,11 @@ public class SessionHandler implements Runnable {
 	private void notifyInvalidRequest() throws IOException
 	{
 		StringBuilder response = new StringBuilder();
-		String body = null;
+		FileReadResult body = null;
 		int contentLength = 0;
 		try {
 			body = FileHandler.INSTANCE.read("badrequest.html");
-			contentLength = counter.countBytes(body);
+			contentLength = body.getNumTotalBytes();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -220,24 +228,50 @@ public class SessionHandler implements Runnable {
 		response.append("Content-Length: " + contentLength + "\r\n");
 		response.append("\r\n");
 		response.append(body);
-		connection.write(response.toString());
+		connection.write(body);
 	}
 	
-	private void notifyNotFound()
+	private void notifyNotFound() throws IOException
 	{
+		StringBuilder response = new StringBuilder();
+		FileReadResult body = null;
+		int contentLength = 0;
 		try {
-			connection.write("HTTP/1.1 404 File not found\r\n");
-			connection.write("HTTP/1.1 File not found\r\n\r\n");
+			body = FileHandler.INSTANCE.read("404.html");
+			contentLength = body.getNumTotalBytes();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		response.append("HTTP/1.1 400 Bad Request\r\n");
+		response.append("Content-Type: text/html\r\n");
+		response.append("Content-Length: " + contentLength + "\r\n");
+		response.append("\r\n");
+		response.append(body);
+		connection.write(body);
 	}
 	
 	private void notifyServerError()
 	{
+		StringBuilder response = new StringBuilder();
+		FileReadResult body = null;
+		int contentLength = 0;
 		try {
-			connection.write("HTTP/1.1 500 Server Error\r\n");
-			connection.write("<p>Server error</p>\r\n\r\n");
+			body = FileHandler.INSTANCE.read("500.html");
+			contentLength = body.getNumTotalBytes();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		response.append("HTTP/1.1 400 Bad Request\r\n");
+		response.append("Content-Type: text/html\r\n");
+		response.append("Content-Length: " + contentLength + "\r\n");
+		response.append("\r\n");
+		response.append(body);
+		try {
+			connection.write(body);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -245,13 +279,9 @@ public class SessionHandler implements Runnable {
 	
 	private void handleGet(String filePath) throws FileNotFoundException, IOException
 	{
-		String fileContents;
-		if (filePath.equals("/"))
-		{
-			fileContents = FileHandler.INSTANCE.read("/index.html");
-		}
-		fileContents = FileHandler.INSTANCE.read(filePath);
-		int fileLength = counter.countBytes(fileContents, charset);
+		File file = initialiseFile(filePath);
+		FileReadResult fileContents = FileHandler.INSTANCE.read(file.getAbsolutePath());
+		int fileLength = fileContents.getNumTotalBytes();
 		connection.write("HTTP/1.1 200 OK\r\n");
 		connection.write("Content-Length: " + fileLength + "\r\n\r\n");
 		connection.write(fileContents);
@@ -259,22 +289,18 @@ public class SessionHandler implements Runnable {
 	
 	private void handleHead(String filePath) throws FileNotFoundException, IOException
 	{
-		String fileContents = FileHandler.INSTANCE.read(filePath);
-		int fileLength = counter.countBytes(fileContents, charset);
+		File file = initialiseFile(filePath);
+		int fileLength = (int) file.length();
 		connection.write("HTTP/1.1 200 OK\r\n");
 		connection.write("Content-Length: " + fileLength + "\r\n\r\n");
 	}
 	
 	private void handlePost(String filePath, SingleRequestHeader header) throws FileNotFoundException, IOException
 	{
-		File file = new File(filePath);
-		if (! file.exists() || file.isDirectory())
-		{
-			throw new FileNotFoundException();
-		}
+		File file = initialiseFile(filePath);
 		String body = connection.readLength(header.getContentLength());
-		String fileContents = FileHandler.INSTANCE.writeAndRead(filePath, body);
-		int fileLength = counter.countBytes(fileContents, charset);
+		FileReadResult fileContents = FileHandler.INSTANCE.writeAndRead(file.getAbsolutePath(), body);
+		int fileLength = fileContents.getNumTotalBytes();
 		connection.write("HTTP/1.1 200 OK\r\n");
 		connection.write("Content-Length: " + fileLength + "\r\n\r\n");
 		connection.write(fileContents);
@@ -282,9 +308,52 @@ public class SessionHandler implements Runnable {
 	
 	private void handlePut(String filePath, SingleRequestHeader header) throws IOException
 	{
+		boolean newResourceCreated = false;
+		try
+		{
+			File file = initialiseFile(filePath);
+		}
+		catch (FileNotFoundException e)
+		{
+			newResourceCreated = true;
+		}
+		filePath = removeTrailingSlash(filePath);
 		String body = connection.readLength(header.getContentLength());
 		FileHandler.INSTANCE.write(filePath, body);
+		if (newResourceCreated)
+		{
+			connection.write("HTTP/1.1 201 Created\r\n\r\n");
+			return;
+		}
 		connection.write("HTTP/1.1 200 OK\r\n\r\n");
+	}
+	
+	private File initialiseFile(String filePath) throws FileNotFoundException
+	{
+		File file;
+		if (filePath.equals("/"))
+		{
+			file = new File("index.html");
+		}
+		else
+		{
+			filePath = removeTrailingSlash(filePath);
+			file = new File(filePath);
+		}
+		if (! file.exists() || file.isDirectory())
+		{
+			throw new FileNotFoundException();
+		}
+		return file;
+	}
+	
+	private String removeTrailingSlash(String filePath)
+	{
+		if (filePath.charAt(0) != '/')
+		{
+			return filePath;
+		}
+		else return filePath.substring(1,filePath.length());
 	}
 
 }
