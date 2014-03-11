@@ -30,7 +30,6 @@ public class ServerHTTP {
 			Socket clientSocket = welcomeSocket.accept();
 			if (clientSocket != null)
 			{
-				System.out.println("Accepted connection from " + clientSocket.getInetAddress());
 				SessionHandler handler = new SessionHandler(clientSocket, this);
 				Thread thread = new Thread(handler);
 				thread.start();
