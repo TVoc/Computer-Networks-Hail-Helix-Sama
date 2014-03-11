@@ -15,7 +15,7 @@ public abstract class ClientHTTP {
 		counter = new StringByteCounter();
 	}
 
-	public abstract List<String> doGet(String filePath, String host, int port)
+	public abstract String doGet(String filePath, String host, int port)
 			throws IOException;
 
 	public abstract String doSingleGet(String filePath, String host, int port)
@@ -40,20 +40,20 @@ public abstract class ClientHTTP {
 		{
 			index += 4;
 			response = response.substring(index, response.length());
-			int srcIndex = response.indexOf("src=\"") + 5;
+			int srcIndex = response.indexOf("src=") + 4;
 			response = response.substring(srcIndex, response.length());
 			
 			int URICursor = 0;
 			char URIChar = response.charAt(URICursor);
 			
 			StringBuilder URI = new StringBuilder();
-			while (URIChar != '\"' && URICursor < response.length())
+			while (URIChar != ' ' && URICursor < response.length())
 			{
 				URI.append(URIChar);
 				URICursor++;
 				URIChar = response.charAt(URICursor);
 			}
-			toReturn.add(URI.toString());
+			toReturn.add(URI.toString().replaceAll("\"",""));
 			response = response.substring(srcIndex + URI.length());
 			index = response.toLowerCase().indexOf("<img");
 		}

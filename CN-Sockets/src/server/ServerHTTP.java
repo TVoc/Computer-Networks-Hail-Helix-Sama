@@ -11,7 +11,7 @@ public class ServerHTTP {
 	private Set<String> allowedMethods;
 	private Set<String> allowedProtocols;
 	private String charset;
-	private long timeout_millis = 5000;
+	private long timeout_millis = 100000;
 	
 	public static final String ROOT_SERVER_FILES = "/serverfiles";
 	
@@ -30,6 +30,7 @@ public class ServerHTTP {
 			Socket clientSocket = welcomeSocket.accept();
 			if (clientSocket != null)
 			{
+				System.out.println("Accepted connection from " + clientSocket.getInetAddress());
 				SessionHandler handler = new SessionHandler(clientSocket, this);
 				Thread thread = new Thread(handler);
 				thread.start();

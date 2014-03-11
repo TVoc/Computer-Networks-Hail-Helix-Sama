@@ -2,6 +2,7 @@ package server;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -27,7 +28,7 @@ public class FileHandler {
 	
 	public synchronized void write(String filePath, String input) throws FileNotFoundException, IOException
 	{
-		BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true));
+		BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, false));
 		writer.write(input);
 		writer.close();
 	}
@@ -47,26 +48,20 @@ public class FileHandler {
 	
 	private FileReadResult readHelper(String filePath) throws FileNotFoundException, IOException
 	{
+		File file = new File(filePath);
+		byte[] buffer = new byte[(int) file.length()];
 		FileInputStream input = new FileInputStream(filePath);
-		int numBytes = 0;
-		List<byte[]> bytes = new ArrayList<byte[]>();
 		
-		byte[] buffer = new byte[1024];
 		int read = 0;
+		int offset = 0;
 		
-		while (read >= 0)
+		while (offset < buffer.length)
 		{
-			read = input.read(buffer);
-			if (read < 0)
-			{
-				continue;
-			}
-			byte[] truncatedToRealLength = Arrays.copyOf(buffer, read);
-			bytes.add(truncatedToRealLength);
-			numBytes += read;
+			read = input.read(buffer, offset, buffer.length - offset);
+			offset += read;
 		}
 		input.close();
-		return new FileReadResult(numBytes, bytes);
+		return new FileReadResult(buffer);
 	}
 
 }

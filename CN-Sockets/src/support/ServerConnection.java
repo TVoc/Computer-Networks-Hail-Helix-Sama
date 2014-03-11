@@ -1,5 +1,6 @@
 package support;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -17,7 +18,7 @@ public class ServerConnection {
 	
 	private Socket socket;
 	private BufferedReader in;
-	private DataOutputStream out;
+	private BufferedOutputStream out;
 	private String charset;
 	private StringByteCounter counter;
 	
@@ -25,23 +26,20 @@ public class ServerConnection {
 	{
 		this.socket = socket;
 		this.in = new BufferedReader(new InputStreamReader(socket.getInputStream(), charset));
-		this.out = new DataOutputStream (socket.getOutputStream());
+		this.out = new BufferedOutputStream(new DataOutputStream (socket.getOutputStream()));
 		this.charset = charset;
 		this.counter = new StringByteCounter();
 	}
 	
 	public void write(String message) throws IOException
 	{
-		out.writeBytes(message);
+		out.write(message.getBytes(this.charset));
 	}
 	
 	public void write(FileReadResult fileContents) throws IOException
 	{
-		List<byte[]> bytes = fileContents.getBytes();
-		for (byte[] buffer : bytes)
-		{
-			out.write(buffer);
-		}
+		out.write(fileContents.getBytes());
+		out.flush();
 	}
 	
 	public String readLine() throws IOException

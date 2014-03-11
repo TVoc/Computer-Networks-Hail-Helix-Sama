@@ -58,6 +58,12 @@ public class SessionHandler implements Runnable {
 				}
 				// client will most likely send a header along with the request: read it
 				SingleRequestHeader header = readHeader();
+				// HTTP 1.1 requires a host entry in the header
+				if (protocol.equals("1.1") && ! header.containsHost())
+				{
+					notifyInvalidRequest();
+					connection.close();
+				}
 				// if protocol is 1.1 and client requested persistent connection, make it so
 				if (protocol.equals("1.1") && header.connectionKeepAlive())
 				{
@@ -227,7 +233,7 @@ public class SessionHandler implements Runnable {
 		response.append("Content-Type: text/html\r\n");
 		response.append("Content-Length: " + contentLength + "\r\n");
 		response.append("\r\n");
-		response.append(body);
+		connection.write(response.toString());
 		connection.write(body);
 	}
 	
@@ -244,11 +250,11 @@ public class SessionHandler implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		response.append("HTTP/1.1 400 Bad Request\r\n");
+		response.append("HTTP/1.1 404 Not found\r\n");
 		response.append("Content-Type: text/html\r\n");
 		response.append("Content-Length: " + contentLength + "\r\n");
 		response.append("\r\n");
-		response.append(body);
+		connection.write(response.toString());
 		connection.write(body);
 	}
 	
@@ -265,12 +271,12 @@ public class SessionHandler implements Runnable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		response.append("HTTP/1.1 400 Bad Request\r\n");
+		response.append("HTTP/1.1 500 Server error\r\n");
 		response.append("Content-Type: text/html\r\n");
 		response.append("Content-Length: " + contentLength + "\r\n");
 		response.append("\r\n");
-		response.append(body);
 		try {
+			connection.write(response.toString());
 			connection.write(body);
 		} catch (IOException e) {
 			e.printStackTrace();

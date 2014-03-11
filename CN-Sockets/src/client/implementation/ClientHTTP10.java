@@ -12,17 +12,19 @@ public class ClientHTTP10 extends ClientHTTP {
 	private static String charset = "UTF-8";
 	
 	@Override
-	public List<String> doGet(String filePath, String host, int port) throws IOException
+	public String doGet(String filePath, String host, int port) throws IOException
 	{
-		List<String> toReturn = new ArrayList<String>();
 		String initialResponse = doSingleGet(filePath, host, port);
-		toReturn.add(initialResponse);
 		List<String> embeddedObjects = findEmbeddedObjects(initialResponse);
 		for (String embeddedObject : embeddedObjects)
 		{
-			toReturn.add(doSingleGet(embeddedObject, host, port));
+			receiveImage(embeddedObject, host, port);
 		}
-		return toReturn;
+		if (! embeddedObjects.isEmpty())
+		{
+			System.out.println(embeddedObjects.size() + " images written to disk.");
+		}
+		return initialResponse;
 	}
 	
 	@Override
@@ -35,6 +37,16 @@ public class ClientHTTP10 extends ClientHTTP {
 		connection.write(HTTPCommand.toString());
 		String response = connection.readUntilEmpty();
 		return response;
+	}
+	
+	public void receiveImage(String filePath, String host, int port) throws IOException
+	{
+		StringBuilder HTTPCommand = new StringBuilder("GET ");
+		HTTPCommand.append(filePath + " HTTP/1.0\r\n\r\n");
+		
+		ClientConnection connection = new ClientConnection(host, port, charset);
+		connection.write(HTTPCommand.toString());
+		connection.readAndStoreImage();
 	}
 
 	@Override
