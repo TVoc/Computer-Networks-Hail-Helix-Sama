@@ -34,6 +34,7 @@ public class ServerConnection {
 	public void write(String message) throws IOException
 	{
 		out.write(message.getBytes(this.charset));
+		out.flush();
 	}
 	
 	public void write(FileReadResult fileContents) throws IOException

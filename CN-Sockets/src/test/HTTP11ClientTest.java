@@ -13,8 +13,8 @@ import client.interfaces.ClientHTTP;
 public class HTTP11ClientTest {
 
 	ClientHTTP client = new ClientHTTP11();
-	String host = "www.gianitp.com";
-	int port = 80;
+	String host = "localhost";
+	int port = 5000;
 	
 	@Test
 	public void embeddedGetTest404() throws IOException {
@@ -43,7 +43,7 @@ public class HTTP11ClientTest {
 	
 	@Test
 	public void putTest() throws IOException {
-		String response = client.doPut("/puttest.txt", "Brevity is the soul of wit.", host, port);
+		String response = client.doPut("/puttest.txt", "Ik doe een put.", host, port);
 		System.out.println(response);
 	}
 }

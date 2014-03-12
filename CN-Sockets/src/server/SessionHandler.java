@@ -253,6 +253,14 @@ public class SessionHandler implements Runnable {
 		response.append("HTTP/1.1 404 Not found\r\n");
 		response.append("Content-Type: text/html\r\n");
 		response.append("Content-Length: " + contentLength + "\r\n");
+		if (persistentConnection)
+		{
+			response.append("Connection: Keep-Alive\r\n");
+		}
+		else
+		{
+			response.append("Connection: close\r\n");
+		}
 		response.append("\r\n");
 		connection.write(response.toString());
 		connection.write(body);
@@ -274,6 +282,14 @@ public class SessionHandler implements Runnable {
 		response.append("HTTP/1.1 500 Server error\r\n");
 		response.append("Content-Type: text/html\r\n");
 		response.append("Content-Length: " + contentLength + "\r\n");
+		if (persistentConnection)
+		{
+			response.append("Connection: Keep-Alive\r\n");
+		}
+		else
+		{
+			response.append("Connection: close\r\n");
+		}
 		response.append("\r\n");
 		try {
 			connection.write(response.toString());
@@ -289,6 +305,14 @@ public class SessionHandler implements Runnable {
 		FileReadResult fileContents = FileHandler.INSTANCE.read(file.getAbsolutePath());
 		int fileLength = fileContents.getNumTotalBytes();
 		connection.write("HTTP/1.1 200 OK\r\n");
+		if (persistentConnection)
+		{
+			connection.write("Connection: Keep-Alive\r\n");
+		}
+		else
+		{
+			connection.write("Connection: close\r\n");
+		}
 		connection.write("Content-Length: " + fileLength + "\r\n\r\n");
 		connection.write(fileContents);
 	}
@@ -298,6 +322,14 @@ public class SessionHandler implements Runnable {
 		File file = initialiseFile(filePath);
 		int fileLength = (int) file.length();
 		connection.write("HTTP/1.1 200 OK\r\n");
+		if (persistentConnection)
+		{
+			connection.write("Connection: Keep-Alive\r\n");
+		}
+		else
+		{
+			connection.write("Connection: close\r\n");
+		}
 		connection.write("Content-Length: " + fileLength + "\r\n\r\n");
 	}
 	
@@ -308,6 +340,14 @@ public class SessionHandler implements Runnable {
 		FileReadResult fileContents = FileHandler.INSTANCE.writeAndRead(file.getAbsolutePath(), body);
 		int fileLength = fileContents.getNumTotalBytes();
 		connection.write("HTTP/1.1 200 OK\r\n");
+		if (persistentConnection)
+		{
+			connection.write("Connection: Keep-Alive\r\n");
+		}
+		else
+		{
+			connection.write("Connection: close\r\n");
+		}
 		connection.write("Content-Length: " + fileLength + "\r\n\r\n");
 		connection.write(fileContents);
 	}
@@ -326,12 +366,33 @@ public class SessionHandler implements Runnable {
 		filePath = removeTrailingSlash(filePath);
 		String body = connection.readLength(header.getContentLength());
 		FileHandler.INSTANCE.write(filePath, body);
+		
+		String confirmation = "Put succeeded";
+		int confirmationByteLength = counter.countBytes(confirmation);
+		
+		String firstLine;
+		
 		if (newResourceCreated)
 		{
-			connection.write("HTTP/1.1 201 Created\r\n\r\n");
-			return;
+			firstLine = "HTTP/1.1 201 Created\r\n";
 		}
-		connection.write("HTTP/1.1 200 OK\r\n\r\n");
+		else
+		{
+			firstLine = "HTTP/1.1 200 OK\r\n";
+		}
+		
+		connection.write(firstLine);
+		connection.write("Content-Length: " + confirmationByteLength + "\r\n");
+		
+		if (persistentConnection)
+		{
+			connection.write("Connection: Keep-Alive\r\n\r\n");
+		}
+		else
+		{
+			connection.write("Connection: close\r\n\r\n");
+		}
+		connection.write(confirmation);
 	}
 	
 	private File initialiseFile(String filePath) throws FileNotFoundException

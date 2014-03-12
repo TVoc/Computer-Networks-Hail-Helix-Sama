@@ -13,8 +13,8 @@ import client.interfaces.ClientHTTP;
 public class HTTP10ClientTest {
 
 	ClientHTTP client = new ClientHTTP10();
-	String host = "www.wolframalpha.com";
-	int port = 80;
+	String host = "localhost";
+	int port = 5000;
 	
 	@Test
 	public void singleGetTest() throws IOException {
@@ -48,14 +48,14 @@ public class HTTP10ClientTest {
 	
 	@Test
 	public void postTest() throws IOException {
-		String response = client.doPost("/", "Brevity is the soul of wit.", host, port);
+		String response = client.doPost("/devput", "Brevity is the soul of wit.", host, port);
 		assertNotEquals(response, null);
 		System.out.println(response);
 	}
 	
 	@Test
 	public void putTest() throws IOException {
-		String response = client.doPost("/", "Brevity is the soul of wit.", host, port);
+		String response = client.doPut("/devput", "Brevity is the soul of wit.", host, port);
 		assertNotEquals(response, null);
 		System.out.println(response);
 	}

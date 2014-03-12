@@ -99,22 +99,37 @@ public class ClientConnection {
 	{
 		byte[] buffer = new byte[header.getContentLength()];
 		int offset = 0;
-		while (offset < buffer.length)
+		int step = 0;
+//		rawIn.readFully(buffer, 0, buffer.length);
+		System.out.println("ping");
+		while (step != -1) 
 		{
-			int step = rawIn.read(buffer, offset, buffer.length - offset);
+			step = rawIn.read(buffer, offset, buffer.length - offset);
+			System.out.println("Step: " + step);
 			offset += step;
 		}
-		return new String(buffer, this.charset);
+//		while (offset < buffer.length)
+//		{
+//			step = rawIn.read(buffer, offset, buffer.length - offset);
+//			if (step == -1)
+//				break;
+//			System.out.println(step);
+//			offset += step;
+//		}
+		String result = new String(buffer, this.charset);
+		System.out.println(result);
+		return result;
 	}
 	
 	public ResponseHeader readHeader() throws IOException
 	{
 		ResponseHeader header = new ResponseHeader();
 		String lineFromServer = in.readLine();
+		System.out.println(lineFromServer);
 		if (lineFromServer.toLowerCase().contains("100 continue"))
 		{
-			lineFromServer = in.readLine();
-			lineFromServer = in.readLine();
+			lineFromServer = in.readLine(); // consume empty line
+			lineFromServer = in.readLine(); // first line from relevant header
 		}
 		while (! lineFromServer.equals(""))
 		{
